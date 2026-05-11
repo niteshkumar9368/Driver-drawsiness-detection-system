@@ -1,5 +1,5 @@
 mediapipe==0.10.21
-opencv-contrib-python==4.10.0.84
+opencv-contrib-python-headless==4.10.0.84
 Django==5.2.13
 djangorestframework==3.17.1
 requests==2.33.1

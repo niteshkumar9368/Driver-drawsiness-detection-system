@@ -119,6 +119,24 @@ python main.py
 
 Press `q` in the camera window to stop the detector.
 
+## Deployment
+
+This repository includes Render deployment configuration:
+
+- `render.yaml` defines the Django web service and PostgreSQL database.
+- `build.sh` installs production dependencies, collects static files, and runs migrations.
+- `requirements-render.txt` uses the headless OpenCV package for Linux hosting.
+- `runtime.txt` pins the Python version used by Render.
+
+To deploy:
+
+1. Push the latest code to GitHub.
+2. Open Render and create a new Blueprint.
+3. Select this repository.
+4. Apply the blueprint and wait for the build to complete.
+
+The hosted app will run the Django dashboard and API. Real webcam detection still needs to run on a local machine because cloud servers cannot access a user's physical webcam directly.
+
 ## API Endpoints
 
 | Method | Endpoint | Description |

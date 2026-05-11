@@ -2,7 +2,11 @@ import math
 import queue
 import threading
 import time
-import winsound
+
+try:
+    import winsound
+except ImportError:
+    winsound = None
 
 import cv2
 import mediapipe as mp
@@ -60,6 +64,9 @@ def draw_eye_landmarks(frame, landmarks, eye_indices):
 
 
 def beep_loop():
+    if winsound is None:
+        return
+
     while not stop_alarm.is_set():
         winsound.Beep(ALARM_FREQUENCY, ALARM_DURATION_MS)
         time.sleep(0.1)
