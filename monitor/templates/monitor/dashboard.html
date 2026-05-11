@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Drowsiness Dashboard</title>
+    <style>
+        :root {
+            --bg: #eef3f8;
+            --panel: #ffffff;
+            --ink: #17202a;
+            --muted: #5f6f85;
+            --line: #d8e0ea;
+            --awake: #16803c;
+            --awake-bg: #e8f7ee;
+            --drowsy: #c92828;
+            --drowsy-bg: #fdeaea;
+            --accent: #2463eb;
+            --shadow: 0 14px 34px rgba(23, 32, 42, 0.12);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 16px;
+            background: linear-gradient(135deg, #f8fbff 0%, var(--bg) 100%);
+        }
+
+        .page {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 32px 0;
+        }
+
+        .top-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 28px;
+            text-align: center;
+        }
+
+        .top-header h1 {
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 3.25rem);
+            font-weight: 800;
+            line-height: 1.12;
+        }
+
+        .dashboard-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .top-section {
+            display: flex;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        .left-section,
+        .right-section {
+            width: 50%;
+        }
+
+        .left-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .section-title {
+            margin: 0 0 14px;
+            font-size: 1.3rem;
+        }
+
+        .video-panel {
+            flex: 1;
+            min-height: 390px;
+        }
+
+        .video-feed {
+            width: 100%;
+            height: 100%;
+            border-radius: 12px;
+            border: 2px solid #ddd;
+            object-fit: cover;
+            background: #0f172a;
+        }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .card {
+            padding: 20px;
+            border: 1px solid rgba(216, 224, 234, 0.85);
+            border-radius: 12px;
+            background: var(--panel);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .card-label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .metric {
+            margin-top: 12px;
+            overflow-wrap: anywhere;
+            font-size: clamp(1.35rem, 2.4vw, 2rem);
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 112px;
+            min-height: 44px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .status-awake {
+            color: var(--awake);
+            background: var(--awake-bg);
+        }
+
+        .status-drowsy {
+            color: var(--drowsy);
+            background: var(--drowsy-bg);
+        }
+
+        .table-card {
+            overflow: hidden;
+            border: 1px solid rgba(216, 224, 234, 0.9);
+            border-radius: 12px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .chart-card {
+            padding: 22px 24px 26px;
+            border: 1px solid rgba(216, 224, 234, 0.9);
+            border-radius: 12px;
+            background: var(--panel);
+            box-shadow: var(--shadow);
+        }
+
+        .chart-card h2 {
+            margin: 0 0 18px;
+            font-size: 1.3rem;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .table-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 22px 24px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .table-header h2 {
+            margin: 0;
+            font-size: 1.3rem;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            width: 100%;
+            min-width: 620px;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 16px 24px;
+            text-align: left;
+            border-bottom: 1px solid #edf1f5;
+            white-space: nowrap;
+        }
+
+        th {
+            color: var(--muted);
+            background: #f8fafc;
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        tbody tr:hover {
+            background: #fbfdff;
+        }
+
+        .empty {
+            padding: 34px 24px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .error {
+            display: none;
+            margin-top: 14px;
+            padding: 12px 14px;
+            border: 1px solid var(--drowsy-bg);
+            border-radius: 8px;
+            color: var(--drowsy);
+            background: #fff7f7;
+        }
+
+        @media (max-width: 900px) {
+            .top-section {
+                flex-direction: column;
+            }
+
+            .left-section,
+            .right-section {
+                width: 100%;
+            }
+
+            .video-panel {
+                min-height: 340px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                font-size: 18px;
+            }
+
+            .page {
+                width: min(100% - 24px, 1180px);
+                padding: 22px 0;
+            }
+
+            .top-header {
+                margin-bottom: 20px;
+            }
+
+            .top-header h1 {
+                font-size: 2rem;
+            }
+
+            .dashboard-layout,
+            .top-section {
+                gap: 18px;
+            }
+
+            .video-panel {
+                min-height: 260px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .card-label {
+                font-size: 0.78rem;
+            }
+
+            .metric {
+                font-size: 1.7rem;
+            }
+
+            .table-header {
+                padding: 18px;
+            }
+
+            .table-header h2 {
+                font-size: 1.15rem;
+            }
+
+            .chart-card {
+                padding: 18px;
+            }
+
+            .chart-card h2 {
+                font-size: 1.15rem;
+            }
+
+            .chart-wrap {
+                height: 280px;
+            }
+
+            th,
+            td {
+                padding: 14px 18px;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .top-header h1 {
+                font-size: 1.7rem;
+            }
+
+            .metric {
+                font-size: 1.45rem;
+            }
+
+            .chart-wrap {
+                height: 240px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <header class="top-header">
+            <h1>Driver Drowsiness Dashboard</h1>
+        </header>
+
+        <div class="dashboard-layout">
+            <section class="top-section">
+                <div class="left-section">
+                    <h2 class="section-title">Live Camera Feed</h2>
+                    <div class="video-panel">
+                        <img src="http://127.0.0.1:8000/video_feed/" class="video-feed" alt="Live camera feed">
+                    </div>
+                </div>
+
+                <div class="right-section">
+                    <section class="cards">
+                        <article class="card">
+                            <span class="card-label">Current Status</span>
+                            <div class="metric">
+                                <span id="status" class="status-badge">Loading</span>
+                            </div>
+                        </article>
+                        <article class="card">
+                            <span class="card-label">Last Detection Time</span>
+                            <div id="lastTime" class="metric">No data</div>
+                        </article>
+                        <article class="card">
+                            <span class="card-label">Total Drowsy Alerts</span>
+                            <div id="drowsyCount" class="metric">0</div>
+                        </article>
+                    </section>
+                </div>
+            </section>
+
+            <section class="chart-card">
+                <h2>Drowsiness Trend Graph</h2>
+                <div class="chart-wrap">
+                    <canvas id="earChart"></canvas>
+                </div>
+            </section>
+
+            <section class="table-card">
+                <div class="table-header">
+                    <div>
+                        <h2>Logs Table</h2>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>EAR Value</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logsTableBody">
+                            <tr>
+                                <td colspan="3" class="empty">Loading logs...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <div id="errorMessage" class="error">
+            Could not fetch logs. Make sure the Django server is running.
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const logsApiUrl = "http://127.0.0.1:8000/api/logs/";
+        const drowsyEarThreshold = 0.22;
+        const statusElement = document.getElementById("status");
+        const lastTime = document.getElementById("lastTime");
+        const drowsyCount = document.getElementById("drowsyCount");
+        const logsTableBody = document.getElementById("logsTableBody");
+        const errorMessage = document.getElementById("errorMessage");
+        const earChartCanvas = document.getElementById("earChart");
+        let earChart;
+
+        function formatTimestamp(value) {
+            if (!value) {
+                return "No data";
+            }
+
+            return new Date(value).toLocaleString();
+        }
+
+        function statusClass(status) {
+            return status === "Drowsy" ? "status-drowsy" : "status-awake";
+        }
+
+        function renderSummary(logs, todayDrowsyCount) {
+            const latestLog = logs[0];
+
+            statusElement.className = "status-badge";
+
+            if (!latestLog) {
+                statusElement.textContent = "No data";
+                lastTime.textContent = "No data";
+                drowsyCount.textContent = "0";
+                return;
+            }
+
+            statusElement.textContent = latestLog.status;
+            statusElement.classList.add(statusClass(latestLog.status));
+            lastTime.textContent = formatTimestamp(latestLog.timestamp);
+            drowsyCount.textContent = todayDrowsyCount;
+        }
+
+        function renderTable(logs) {
+            if (!logs.length) {
+                logsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="empty">No logs yet. Start the detector to see data here.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            logsTableBody.innerHTML = logs.map((log) => `
+                <tr>
+                    <td>${formatTimestamp(log.timestamp)}</td>
+                    <td><span class="status-badge ${statusClass(log.status)}">${log.status}</span></td>
+                    <td>${Number(log.ear_value).toFixed(3)}</td>
+                </tr>
+            `).join("");
+        }
+
+        function chartPointColors(values) {
+            return values.map((value) => (
+                Number(value) < drowsyEarThreshold ? "#c92828" : "#2463eb"
+            ));
+        }
+
+        function renderChart(logs) {
+            const chartLogs = logs.slice(0, 20).reverse();
+            const labels = chartLogs.map((log) => formatTimestamp(log.timestamp));
+            const values = chartLogs.map((log) => Number(log.ear_value));
+
+            if (!earChart) {
+                earChart = new Chart(earChartCanvas, {
+                    type: "line",
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: "EAR Value",
+                            data: values,
+                            borderColor: "#2463eb",
+                            backgroundColor: "rgba(36, 99, 235, 0.14)",
+                            pointBackgroundColor: chartPointColors(values),
+                            pointBorderColor: chartPointColors(values),
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: false,
+                        scales: {
+                            x: {
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: "EAR Value"
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `EAR: ${Number(context.raw).toFixed(3)}`
+                                }
+                            }
+                        }
+                    }
+                });
+                return;
+            }
+
+            earChart.data.labels = labels;
+            earChart.data.datasets[0].data = values;
+            earChart.data.datasets[0].pointBackgroundColor = chartPointColors(values);
+            earChart.data.datasets[0].pointBorderColor = chartPointColors(values);
+            earChart.update();
+        }
+
+        async function loadLogs() {
+            try {
+                const response = await fetch(logsApiUrl);
+
+                if (!response.ok) {
+                    throw new Error("API request failed");
+                }
+
+                const data = await response.json();
+                console.log("API DATA:", data);
+
+                const logs = Array.isArray(data.logs) ? data.logs : [];
+                const todayDrowsyCount = Number(data.today_drowsy_count || 0);
+
+                renderSummary(logs, todayDrowsyCount);
+                renderChart(logs);
+                renderTable(logs);
+                errorMessage.style.display = "none";
+            } catch (error) {
+                console.error("API ERROR:", error);
+                errorMessage.style.display = "block";
+            }
+        }
+
+        loadLogs();
+        setInterval(loadLogs, 3000);
+    </script>
+</body>
+</html>
