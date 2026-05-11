@@ -2,6 +2,11 @@
 
 A real-time driver drowsiness detection system built with Python, OpenCV, MediaPipe, Django, and Django REST Framework. The application monitors a driver's eye activity through a webcam, calculates the Eye Aspect Ratio (EAR), triggers an audible alert when drowsiness is detected, and records detection events in a web dashboard.
 
+## Project Links
+
+- Repository: https://github.com/niteshkumar9368/Driver-drawsiness-detection-system
+- Deployment URL: https://driver-drowsiness-detection-system.onrender.com
+
 ## Features
 
 - Real-time webcam-based face and eye landmark detection
